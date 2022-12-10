@@ -1,5 +1,9 @@
 -- This corresponds to src/comp/Undefined.hs in bsc.
-module Language.Bluespec.Classic.AST.Undefined where
+module Language.Bluespec.Classic.AST.Undefined
+  ( UndefKind(..)
+  ) where
+
+import Language.Bluespec.Prelude
 
 -- Undefined values in BSC carry information about their origin.
 -- (The evaluator uses this for choosing error messages and optimizations.)
@@ -15,3 +19,4 @@ module Language.Bluespec.Classic.AST.Undefined where
 --   any other dont-care value that doesn't fit the above kinds.
 
 data UndefKind = UNotUsed | UDontCare | UNoMatch
+  deriving (Eq, Ord, Show)

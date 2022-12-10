@@ -1,5 +1,7 @@
 -- This corresponds to src/comp/SpeedyString.hs in bsc.
-module Language.Bluespec.Classic.AST.SString where
+module Language.Bluespec.Classic.AST.SString
+  ( SString
+  ) where
 
 import Data.Text (Text)
 

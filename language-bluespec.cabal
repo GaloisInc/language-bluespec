@@ -32,22 +32,34 @@ source-repository head
   location:            https://github.com/GaloisInc/language-bluespec
 
 library
-    exposed-modules:  Language.Bluespec.Classic.AST
-                      Language.Bluespec.Classic.AST.FString
-                      Language.Bluespec.Classic.AST.Id
-                      Language.Bluespec.Classic.AST.IntLit
-                      Language.Bluespec.Classic.AST.Literal
-                      Language.Bluespec.Classic.AST.Position
-                      Language.Bluespec.Classic.AST.Pragma
-                      Language.Bluespec.Classic.AST.SchedInfo
-                      Language.Bluespec.Classic.AST.SString
-                      Language.Bluespec.Classic.AST.Syntax
-                      Language.Bluespec.Classic.AST.Type
-                      Language.Bluespec.Classic.AST.Undefined
-                      Language.Bluespec.Classic.AST.VModInfo
-    build-depends:    base >= 4.9 && < 4.17
-                    -- , prettyprinter
-                    , text
-    hs-source-dirs:   src
-    default-language: Haskell2010
-    ghc-options:      -Wall
+    exposed-modules:    Language.Bluespec.Classic.AST
+                        Language.Bluespec.Classic.AST.FString
+                        Language.Bluespec.Classic.AST.Id
+                        Language.Bluespec.Classic.AST.IntLit
+                        Language.Bluespec.Classic.AST.Literal
+                        Language.Bluespec.Classic.AST.Position
+                        Language.Bluespec.Classic.AST.Pragma
+                        Language.Bluespec.Classic.AST.SchedInfo
+                        Language.Bluespec.Classic.AST.SString
+                        Language.Bluespec.Classic.AST.Syntax
+                        Language.Bluespec.Classic.AST.Type
+                        Language.Bluespec.Classic.AST.Undefined
+                        Language.Bluespec.Classic.AST.VModInfo
+
+                        Language.Bluespec.Classic.AST.Lex
+                        Language.Bluespec.Classic.AST.PreIds
+                        Language.Bluespec.Classic.AST.PreStrings
+
+                        Language.Bluespec.Pretty
+    other-modules:      Language.Bluespec.IntegerUtil
+                        Language.Bluespec.Log2
+                        Language.Bluespec.Prelude
+                        Language.Bluespec.Util
+    default-extensions: NoImplicitPrelude
+    build-depends:      base >= 4.9 && < 4.17
+                      , containers
+                      , pretty
+                      , text
+    hs-source-dirs:     src
+    default-language:   Haskell2010
+    ghc-options:        -Wall
