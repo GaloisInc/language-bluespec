@@ -53,6 +53,7 @@ library
 
                         Language.Bluespec.Classic.AST.Builtin.FStrings
                         Language.Bluespec.Classic.AST.Builtin.Ids
+                        Language.Bluespec.Classic.AST.Builtin.Types
 
                         Language.Bluespec.Lex
                         Language.Bluespec.Pretty

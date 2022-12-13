@@ -14,6 +14,7 @@ module Language.Bluespec.Classic.AST.Type
   , CQType(..)
 
   , baseKVar
+  , cTNum
   , isTConArrow
   , isTConPair
   , leftCon
@@ -64,6 +65,9 @@ instance HasPosition Type where
     getPosition (TAp f a) = getPosition f `bestPosition` getPosition a
     getPosition (TGen pos _) = pos
     getPosition (TDefMonad pos) = pos
+
+cTNum :: Integer -> Position -> CType
+cTNum n pos = TCon (TyNum n pos)
 
 isTConArrow :: TyCon -> Bool
 isTConArrow (TyCon i _ _) =  i == idArrow noPosition
