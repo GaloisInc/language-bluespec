@@ -40,18 +40,18 @@ import Data.Char (isAlpha)
 import qualified Data.List as L
 import Text.PrettyPrint.HughesPJClass
 
+import Language.Bluespec.Classic.AST.Builtin.Ids
+import Language.Bluespec.Classic.AST.Builtin.FStrings
 import Language.Bluespec.Classic.AST.FString
 import Language.Bluespec.Classic.AST.Id
-import Language.Bluespec.Classic.AST.Lex
 import Language.Bluespec.Classic.AST.Literal
 import Language.Bluespec.Classic.AST.Position
 import Language.Bluespec.Classic.AST.Pragma
-import Language.Bluespec.Classic.AST.PreIds
-import Language.Bluespec.Classic.AST.PreStrings
 import Language.Bluespec.Classic.AST.Type
 import Language.Bluespec.Classic.AST.Undefined
 import Language.Bluespec.Classic.AST.VModInfo
 import Language.Bluespec.IntegerUtil
+import Language.Bluespec.Lex
 import Language.Bluespec.Log2
 import Language.Bluespec.Prelude
 import Language.Bluespec.Pretty

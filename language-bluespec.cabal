@@ -51,10 +51,10 @@ library
                         Language.Bluespec.Classic.AST.Undefined
                         Language.Bluespec.Classic.AST.VModInfo
 
-                        Language.Bluespec.Classic.AST.Lex
-                        Language.Bluespec.Classic.AST.PreIds
-                        Language.Bluespec.Classic.AST.PreStrings
+                        Language.Bluespec.Classic.AST.Builtin.FStrings
+                        Language.Bluespec.Classic.AST.Builtin.Ids
 
+                        Language.Bluespec.Lex
                         Language.Bluespec.Pretty
     other-modules:      Language.Bluespec.IntegerUtil
                         Language.Bluespec.Log2

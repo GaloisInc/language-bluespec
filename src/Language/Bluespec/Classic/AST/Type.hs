@@ -22,11 +22,11 @@ module Language.Bluespec.Classic.AST.Type
 import Data.Char (chr)
 import Text.PrettyPrint.HughesPJClass
 
+import Language.Bluespec.Classic.AST.Builtin.Ids
 import Language.Bluespec.Classic.AST.FString
 import Language.Bluespec.Classic.AST.Id
 import Language.Bluespec.Classic.AST.Position
 import Language.Bluespec.Classic.AST.Pragma
-import Language.Bluespec.Classic.AST.PreIds
 import Language.Bluespec.Prelude
 import Language.Bluespec.Pretty
 import Language.Bluespec.Util

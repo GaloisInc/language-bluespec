@@ -1,10 +1,10 @@
 -- This corresponds to src/Comp/PreIds.hs in bsc.
-module Language.Bluespec.Classic.AST.PreIds where
+module Language.Bluespec.Classic.AST.Builtin.Ids where
 
+import Language.Bluespec.Classic.AST.Builtin.FStrings
 import Language.Bluespec.Classic.AST.FString
 import Language.Bluespec.Classic.AST.Id
 import Language.Bluespec.Classic.AST.Position
-import Language.Bluespec.Classic.AST.PreStrings
 import Language.Bluespec.Prelude
 
 -- | Identifier without a position

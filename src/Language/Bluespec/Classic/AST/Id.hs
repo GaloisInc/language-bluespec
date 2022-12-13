@@ -30,10 +30,10 @@ import Data.Char (isDigit)
 import qualified Data.List as L
 import Text.PrettyPrint.HughesPJClass
 
+import Language.Bluespec.Classic.AST.Builtin.FStrings
 import Language.Bluespec.Classic.AST.FString
 import Language.Bluespec.Classic.AST.Position
-import Language.Bluespec.Classic.AST.Lex
-import Language.Bluespec.Classic.AST.PreStrings
+import Language.Bluespec.Lex
 import Language.Bluespec.Prelude
 import Language.Bluespec.Pretty
 import Language.Bluespec.Util

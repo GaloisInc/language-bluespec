@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 -- This corresponds to src/Comp/PreStrings.hs in bsc.
-module Language.Bluespec.Classic.AST.PreStrings where
+module Language.Bluespec.Classic.AST.Builtin.FStrings where
 
 import Language.Bluespec.Classic.AST.FString
 import Language.Bluespec.Prelude

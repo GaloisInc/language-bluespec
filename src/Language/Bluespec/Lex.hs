@@ -1,5 +1,5 @@
 -- This corresponds to src/comp/Lex.hs in bsc.
-module Language.Bluespec.Classic.AST.Lex
+module Language.Bluespec.Lex
   ( isIdChar
   , isSym
   ) where
