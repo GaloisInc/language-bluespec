@@ -1,6 +1,12 @@
 -- This corresponds to src/comp/IntLit.hs in bsc.
 module Language.Bluespec.Classic.AST.IntLit
   ( IntLit(..)
+  , ilDec
+  , ilSizedDec
+  , ilHex
+  , ilSizedHex
+  , ilBin
+  , ilSizedBin
   ) where
 
 import Text.PrettyPrint.HughesPJClass
@@ -30,3 +36,21 @@ instance Show IntLit where
 
 instance Pretty IntLit where
      pPrintPrec _d _p i = text (show i)
+
+ilDec :: Integer -> IntLit
+ilDec i = IntLit { ilWidth = Nothing, ilBase = 10, ilValue = i }
+
+ilSizedDec :: Integer -> Integer -> IntLit
+ilSizedDec w i = IntLit { ilWidth = Just w, ilBase = 10, ilValue = i }
+
+ilHex :: Integer -> IntLit
+ilHex i = IntLit { ilWidth = Nothing, ilBase = 16, ilValue = i }
+
+ilSizedHex :: Integer -> Integer -> IntLit
+ilSizedHex w i = IntLit { ilWidth = Just w, ilBase = 16, ilValue = i }
+
+ilBin :: Integer -> IntLit
+ilBin i = IntLit { ilWidth = Nothing, ilBase = 2,  ilValue = i }
+
+ilSizedBin :: Integer -> Integer -> IntLit
+ilSizedBin w i = IntLit { ilWidth = Just w, ilBase = 2, ilValue = i }
