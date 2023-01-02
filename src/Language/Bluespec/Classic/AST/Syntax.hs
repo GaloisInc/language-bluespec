@@ -349,12 +349,12 @@ instance Pretty CExpr where
     pPrintPrec d p (Cletseq [] e) = pparen (p > 0) $
         (t"letseq in" <+> pp d e)
     pPrintPrec d p (Cletseq ds e) = pparen (p > 0) $
-        (t"letseq" <+> foldr1 ($+$) (map (pp d) ds)) $+$
+        (t"letseq" <+> text "{" <+> foldr1 ($+$) (map (pp d) ds)) <+> text "}" $+$
         (t"in  " <> pp d e)
     pPrintPrec d p (Cletrec [] e) = pparen (p > 0) $
         (t"let in" <+> pp d e)
     pPrintPrec d p (Cletrec ds e) = pparen (p > 0) $
-        (t"let" <+> foldr1 ($+$) (map (pp d) ds)) $+$
+        (t"let" <+> t "{" <+> foldr1 ($+$) (map (pp d) ds)) <+> t "}" $+$
         (t"in  " <> pp d e)
     pPrintPrec  d  p (CSelect e i) = pparen (p > (fromIntegral maxPrec+2)) $ pPrintPrec d (fromIntegral maxPrec+2) e <> t"." <> ppVarId d i
     pPrintPrec  d _p (CCon i []) = ppConId d i
@@ -672,9 +672,9 @@ instance Pretty CStmt where
             (map (ppPProp d . snd) pprops) ++
             [pp d pat <+> t "<-" <+> pp d e]
     pPrintPrec _d _p (CSletseq []) = error "Syntax.Pretty(CStmt): CSletseq []"
-    pPrintPrec  d _p (CSletseq ds) = text "letseq" <+> foldr1 ($+$) (map (pp d) ds)
+    pPrintPrec  d _p (CSletseq ds) = text "letseq" <+> text "{" <+> foldr1 ($+$) (map (pp d) ds) <+> text "}"
     pPrintPrec _d _p (CSletrec []) = error "Syntax.Pretty(CStmt): CSletrec []"
-    pPrintPrec  d _p (CSletrec ds) = text "let" <+> foldr1 ($+$) (map (pp d) ds)
+    pPrintPrec  d _p (CSletrec ds) = text "let" <+> text "{" <+> foldr1 ($+$) (map (pp d) ds) <+> text "}"
     pPrintPrec  d p (CSExpr _ e) = pPrintPrec d p e
 
 instance HasPosition CStmt where
