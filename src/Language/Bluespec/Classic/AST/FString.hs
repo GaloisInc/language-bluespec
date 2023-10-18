@@ -1,6 +1,7 @@
 -- This corresponds to src/comp/FStringCompat.hs in bsc.
 module Language.Bluespec.Classic.AST.FString
   ( FString
+  , concatFString
   , getFString
   , mkFString
   , tmpFString
@@ -26,6 +27,9 @@ instance Show FString where
 
 instance PPrint FString where
     pPrint _ _ x = text (show x)
+
+concatFString :: [FString] -> FString
+concatFString fs = FString $ T.concat [s | FString s <- fs]
 
 getFString :: FString -> String
 getFString = toString

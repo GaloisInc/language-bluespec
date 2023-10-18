@@ -38,22 +38,6 @@ ppr d = pretty lineWidth linePref . pPrint d 0
 pprIndent :: PPrint a => Int -> PDetail -> a -> String
 pprIndent i d = pretty lineWidth linePref . nest i . pPrint d 0
 
-lineWidth, linePref :: Int
-lineWidth = 120
-linePref = 100
-
--- Produces a string from a text "x" in Normal mode with "w" line
--- length, "w/m" ribbons per line.
-pretty :: Int -> Int -> Doc -> String
-pretty w m x = fullRender PageMode w (toEnum w / toEnum m) string_txt "\n" x
-
--- The function which tells fullRender how to compose Doc elements
--- into a String.
-string_txt :: TextDetails -> String -> String
-string_txt (Chr c)   s  = c:s
-string_txt (Str s1)  s2 = s1 ++ s2
-string_txt (PStr s1) s2 = s1 ++ s2
-
 instance PPrint Int where
     pPrint _ _ x = text (itos x)
 

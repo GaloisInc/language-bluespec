@@ -6,6 +6,7 @@ module Language.Bluespec.Classic.AST.Literal
 import Language.Bluespec.Classic.AST.IntLit
 import Language.Bluespec.Classic.AST.Pretty
 import Language.Bluespec.Prelude
+import Language.Bluespec.SystemVerilog.AST.Pretty
 
 data Literal
         = LString String
@@ -21,3 +22,10 @@ instance PPrint Literal where
     pPrint d p (LInt i) = pPrint d p i
     pPrint d p (LReal r) = pPrint d p r
     pPrint _ _ LPosition = text ("<Position>")
+
+instance PVPrint Literal where
+    pvPrint _ _ (LString s) = text (show s)
+    pvPrint _ _ (LChar c) = text (show [c])
+    pvPrint d p (LInt i) = pvPrint d p i
+    pvPrint d p (LReal r) = pvPrint d p r
+    pvPrint _ _ LPosition = text ("<Position>")

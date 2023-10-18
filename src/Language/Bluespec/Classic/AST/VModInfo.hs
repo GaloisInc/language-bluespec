@@ -24,12 +24,16 @@ import Language.Bluespec.Classic.AST.Position
 import Language.Bluespec.Classic.AST.Pretty
 import Language.Bluespec.Classic.AST.SchedInfo
 import Language.Bluespec.Prelude
+import Language.Bluespec.SystemVerilog.AST.Pretty
 
 newtype VName = VName String
         deriving (Eq, Ord, Show)
 
 instance PPrint VName where
     pPrint _ _ (VName s) = text s
+
+instance PVPrint VName where
+    pvPrint _ _ (VName s) = text s
 
 newtype VPathInfo = VPathInfo [(VName, VName)]
                   deriving (Eq, Ord, Show)
@@ -54,11 +58,17 @@ instance PPrint VPathInfo where
             s2par "Combinational paths from inputs to outputs:" $+$
             nest 2 (vcat (map ppOne (joinPaths nns)))
 
+instance PVPrint VPathInfo where
+    pvPrint d p v = ppPathInfo d p v
+
 instance HasPosition VFieldInfo where
   getPosition (Method { vf_name = n }) = getPosition n
   getPosition (Clock i)                 = getPosition i -- or noPosition?
   getPosition (Reset i)                 = getPosition i -- or noPosition?
   getPosition (Inout { vf_name = n })  = getPosition n
+
+ppPathInfo :: PDetail -> Int -> VPathInfo -> Doc
+ppPathInfo d p ps = pPrint d p ps
 
 -- the order is important for VIOProps ("unused" should come last)
 data VeriPortProp = VPreg
@@ -82,6 +92,9 @@ instance PPrint VeriPortProp where
     pPrint _ _ VPreset  = text "reset"
     pPrint _ _ VPinout  = text "inout"
     pPrint _ _ VPclockgate = text "clock gate"
+
+instance PVPrint VeriPortProp where
+    pvPrint _d _p v = text (drop 2 (show v))
 
 data VArgInfo = Param VName    -- named module parameter
               -- named module port, with associated clock and reset

@@ -2,6 +2,12 @@
 -- This corresponds to src/comp/Util.hs in bsc.
 module Language.Bluespec.Util
   ( dbgLevel
+
+  , unconsOrErr
+
+  , fromJustOrErr
+
+  , quote
   , doubleQuote
   , ToString(..)
   ) where
@@ -18,7 +24,24 @@ dbgLevel :: Int
 dbgLevel = -1
 
 -- =====
+-- List utilities
+
+unconsOrErr :: String -> [elem] -> (elem, [elem])
+unconsOrErr _   (elt:rest) = (elt, rest)
+unconsOrErr err []         = error err
+
+-- =====
+-- List/Maybe utilities
+
+fromJustOrErr :: String -> Maybe value -> value
+fromJustOrErr err Nothing  = error err
+fromJustOrErr _   (Just v) = v
+
+-- =====
 -- String utilities
+
+quote :: String -> String
+quote s = "`" ++ s ++ "'"
 
 doubleQuote :: String -> String
 doubleQuote s = "\"" ++ s ++ "\""
