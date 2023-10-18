@@ -11,6 +11,7 @@ import qualified Data.Set as S
 
 import Language.Bluespec.Classic.AST.Pretty
 import Language.Bluespec.Prelude
+import Language.Bluespec.SystemVerilog.AST.Pretty
 
 data SchedInfo idtype = SchedInfo {
         methodConflictInfo :: MethodConflictInfo idtype,
@@ -36,6 +37,14 @@ instance (PPrint idtype, Ord idtype) => PPrint (SchedInfo idtype) where
              pPrint d 0 (rulesBetweenMethods si),
              pPrint d 0 (rulesBeforeMethods si),
              pPrint d 0 (clockCrossingMethods si)]
+
+instance (PVPrint idtype, Ord idtype) => PVPrint (SchedInfo idtype) where
+    pvPrint d _p si =
+        sep [text "SchedInfo",
+             pvPrint d 0 (methodConflictInfo si),
+             pvPrint d 0 (rulesBetweenMethods si),
+             pvPrint d 0 (rulesBeforeMethods si),
+             pvPrint d 0 (clockCrossingMethods si)]
 
 {- a CF b     => a & b have the same effect when executed in parallel
                  in the same rule, or when executed in either order
@@ -74,6 +83,11 @@ data MethodConflictInfo idtype =
 instance (PPrint idtype, Ord idtype) => PPrint (MethodConflictInfo idtype) where
     pPrint d p mci =
         let ds = makeMethodConflictDocs (pPrint d p) ppReadable "[" "]" mci
+        in  text "[" <> sepList ds (text ",") <> text "]"
+
+instance (PVPrint idtype, Ord idtype) => PVPrint (MethodConflictInfo idtype) where
+    pvPrint d p mci  =
+        let ds = makeMethodConflictDocs (pvPrint d p) pvpReadable "[" "]" mci
         in  text "[" <> sepList ds (text ",") <> text "]"
 
 -- Given:

@@ -10,6 +10,7 @@ module Language.Bluespec.Classic.AST.Position
 
 import Language.Bluespec.Classic.AST.Pretty
 import Language.Bluespec.Prelude
+import Language.Bluespec.SystemVerilog.AST.Pretty
 
 -- For now, we don't track positions, although we may do so in the future.
 data Position = NoPos
@@ -17,6 +18,9 @@ data Position = NoPos
 
 instance PPrint Position where
     pPrint _ _ NoPos = text "<NoPos>"
+
+instance PVPrint Position where
+    pvPrint _ _ NoPos = text "<NoPos>"
 
 bestPosition :: Position -> Position -> Position
 bestPosition p1 p2 = if p1 == noPosition then p2 else p1

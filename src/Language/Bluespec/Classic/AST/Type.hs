@@ -15,9 +15,14 @@ module Language.Bluespec.Classic.AST.Type
 
   , baseKVar
   , cTNum
+  , getArrows
+  , isFn
+  , isModule
   , isTConArrow
   , isTConPair
   , leftCon
+  , newIds
+  , unravel
   ) where
 
 import Data.Char (chr)
@@ -29,6 +34,7 @@ import Language.Bluespec.Classic.AST.Position
 import Language.Bluespec.Classic.AST.Pragma
 import Language.Bluespec.Classic.AST.Pretty
 import Language.Bluespec.Prelude
+import Language.Bluespec.SystemVerilog.AST.Pretty
 import Language.Bluespec.Util
 
 -- | Representation of types
@@ -58,6 +64,38 @@ instance PPrint Type where
     pPrint _d _p (TDefMonad _) = text ("TDefMonad")
     pPrint  d  p (TGen _ n) = pparen True (text "TGen" <+> pPrint d p n)
 
+instance PVPrint Type where
+    pvPrint _d _p (TCon (TyCon special _ _))
+        | special == idPrimUnit = text "void"
+        -- These are needed when printing a function/method,
+        -- because Action/ActionValue are keywords which introduce implicit
+        -- action..endaction or actionvalue..endactionvalue blocks.
+        -- It used to be that displaying "Prelude::Action" would print
+        -- broken code, because then it's no longer using the keyword.
+        -- So this code is to ensure that those places print the keyword,
+        -- but it affects all other printing of the type, too.
+        | special == idAction = text "Action"
+        | special == idActionValue = text "ActionValue"
+    pvPrint  d _p (TCon c) = pvPrint d 0 c
+    pvPrint  d _p (TVar i) = pvPrint d 0 i
+    pvPrint _d _p _ty@(TAp (TCon (TyCon av _ _)) (TCon (TyCon special _ _)))
+        -- ActionValue#(void) ==> Action
+        | (qualEq idActionValue av) && (qualEq special idPrimUnit)
+            = text "Action"
+    pvPrint d p ty@(TAp (TAp (TCon special) _a) _b)
+        | isTConPair special =
+            let ts = tUnmkTuple ty
+                n  = length ts
+            in  t"Tuple" <> t(show n) <> pvParameterTypes d ts
+        | isTConArrow special =
+            pparen (p > 8) (ppTypedId d Nothing (t"f") ty newIds)
+--        pparen (p > 8) (sep [pvPrint d 9 a <+> text "->", pvPrint d 8 r])
+    pvPrint d p (TAp e e') = pparen (p>9) $
+        let (x, ys) = unravel (TAp e e')
+        in pvPrint d 9 x <> t"#(" <> sepList (map (pvPrint d 0) ys) (text ",") <> t")"
+    pvPrint _d _p (TGen _ n) = text ('_':show n)
+    pvPrint _d _p (TDefMonad _) = text "default_module_type"
+
 instance HasPosition Type where
     getPosition (TVar var) = getPosition var
     getPosition (TCon con) = getPosition con
@@ -65,16 +103,78 @@ instance HasPosition Type where
     getPosition (TGen pos _) = pos
     getPosition (TDefMonad pos) = pos
 
+isFn :: Type -> Bool
+isFn (TAp (TAp (TCon arr) _) _) = isTConArrow arr
+isFn _         = False
+
+newIds :: [Doc]
+newIds = map t (newIdsn 1)
+
+newIdsn :: Integer -> [String]
+newIdsn n = ("x" ++ itos n):(newIdsn (n+1))
+
+pp :: (PVPrint a) => PDetail -> a -> Doc
+pp d x = pvPrint d 0 x
+
+ppLabelledTypedId :: PDetail -> Doc -> Maybe Id -> Bool -> Doc -> Type -> [Doc] -> Doc
+ppLabelledTypedId d intro modId isFnlike i ty ids =
+  let (ys, x) = getArrows ty
+      ity = case x of (TAp (TCon _) y) -> y;
+                      z -> z
+      g [] = empty
+      g xs = t"#(" <>  sepList xs (t",") <> t")"
+      f [] = intro <+> pp d x <+> i <> (if isFnlike then t"()" else empty)
+      f xs = if isModule modId x
+              then t"module" <+> i <> g xs <> t"(" <> pvPrint d 0 ity <> t")"
+              else intro <+> pvPrint d 9 x <+> i <> t"(" <> sepList xs (text ",") <> t")"
+      zs = zipWith (\ y i' -> ppTypedId d Nothing i' y newIds) ys ids
+  in f zs
+
+ppTypedId :: PDetail -> Maybe Id -> Doc -> Type -> [Doc] -> Doc
+ppTypedId d mi i y = ppLabelledTypedId d (if isFn y then t"function" else empty) mi (isFn y) i y
+
+pvParameterTypes :: PDetail -> [Type] -> Doc
+pvParameterTypes _d [] = empty
+pvParameterTypes  d ts =
+    t"#(" <> sepList (map (\ y -> pvPrint d 0 y) ts) (t ",") <> t ")"
+
+unravel :: Type -> (Type,[Type])
+unravel (TAp (TAp a b) c) =
+  let (x, ys) = unravel (TAp a b)
+  in (x, ys ++[c])
+unravel (TAp a b) = (a, [b])
+unravel x = error ("unravel bad: " ++ show x)
+
+t :: String -> Doc
+t s = text s
+
+tUnmkTuple :: Type -> [Type]
+tUnmkTuple (TAp (TAp (TCon pair) a) b) | isTConPair pair =
+  let bs = tUnmkTuple b
+  in a:bs
+tUnmkTuple x = [x]
+
 cTNum :: Integer -> Position -> CType
 cTNum n pos = TCon (TyNum n pos)
 
+getArrows :: Type -> ([Type], Type)
+getArrows t' = getArrowsAccum [] t'
+    where getArrowsAccum ts (TAp (TAp (TCon arr) a) r) | isTConArrow arr
+                              = getArrowsAccum (a:ts) r
+          getArrowsAccum ts r = (reverse ts, r)
+
+isModule :: Maybe Id -> Type -> Bool
+isModule _ (TAp (TCon (TyCon i _ _)) _) =  likeModule i
+isModule (Just i') (TAp (TVar (TyVar i _ _)) _) =  i == i'
+isModule _ _          =  False
+
 isTConArrow :: TyCon -> Bool
 isTConArrow (TyCon i _ _) =  i == idArrow noPosition
-isTConArrow t = error("isTConArrow: not TCon " ++ show t)
+isTConArrow t' = error("isTConArrow: not TCon " ++ show t')
 
 isTConPair :: TyCon -> Bool
 isTConPair (TyCon i _ _) =  i == idPrimPair
-isTConPair t = error("isTConPair: not TCon " ++ show t)
+isTConPair t' = error("isTConPair: not TCon " ++ show t')
 
 -- | used to do the sorting of instances
 -- so that overlapping matches go to the most specific
@@ -115,6 +215,9 @@ instance Ord TyVar where
 
 instance PPrint TyVar where
     pPrint d _ (TyVar i _ _) = ppVarId d i
+
+instance PVPrint TyVar where
+    pvPrint d _ (TyVar i _ _) = pvpId d i
 
 instance HasPosition TyVar where
     getPosition (TyVar name _ _) = getPosition name
@@ -157,6 +260,11 @@ instance PPrint TyCon where
     pPrint _d _ (TyNum i _) = text (itos i)
     pPrint _d _ (TyStr s _) = text (show s)
 
+instance PVPrint TyCon where
+    pvPrint  d _ (TyCon i _ _) = pvpId d i
+    pvPrint _d _ (TyNum i _) = text (itos i)
+    pvPrint _d _ (TyStr s _) = text (show s)
+
 instance HasPosition TyCon where
     getPosition (TyCon name _k _) = getPosition name
     getPosition (TyNum _ pos) = pos
@@ -175,7 +283,7 @@ data TISort
         deriving (Eq, Ord, Show)
 
 instance PPrint TISort where
-    pPrint  d  p (TItype n t) = pparen (p>0) $ text "TItype" <+> pPrint d 0 n <+> pPrint d 1 t
+    pPrint  d  p (TItype n t') = pparen (p>0) $ text "TItype" <+> pPrint d 0 n <+> pPrint d 1 t'
     pPrint  d  p (TIdata is enum) = pparen (p>0) $ text (if enum then "TIdata (enum)" else "TIdata") <+> pPrint d 1 is
     pPrint  d  p (TIstruct ss is) = pparen (p>0) $ text "TIstruct" <+> pPrint d 1 ss <+> pPrint d 1 is
     pPrint _d _p (TIabstract) = text "TIabstract"
@@ -218,6 +326,13 @@ instance PPrint Kind where
     pPrint d p (Kfun l r) = pparen (p>9) $ pPrint d 10 l <+> text "->" <+> pPrint d 9 r
     pPrint _ _ (KVar i) = text (showKVar i)
 
+instance PVPrint Kind where
+    pvPrint _ _ KStar = text "*"
+    pvPrint _ _ KNum = text "#"
+    pvPrint _ _ KStr = text "$"
+    pvPrint d p (Kfun l r) = pparen (p>9) $ pvPrint d 10 l <+> text "->" <+> pvPrint d 9 r
+    pvPrint _ _ (KVar i) = text (show i)
+
 -- KIMisc.newKVar starts at this number
 baseKVar :: Int
 baseKVar = 1000
@@ -253,9 +368,19 @@ instance PPrint PartialKind where
     pPrint d p (PKfun l r) =
         pparen (p>9) $ pPrint d 10 l <+> text "->" <+> pPrint d 9 r
 
+instance PVPrint PartialKind where
+    pvPrint _ _ PKNoInfo = text "?"
+    pvPrint _ _ PKStar = text "*"
+    pvPrint _ _ PKNum = text "#"
+    pvPrint _ _ PKStr = text "$"
+    pvPrint d p (PKfun l r) = pparen (p>9) $ pvPrint d 10 l <+> text "->" <+> pvPrint d 9 r
+
 -- | A named typeclass
 newtype CTypeclass = CTypeclass Id
     deriving (Eq, Ord, Show, PPrint, HasPosition)
+
+instance PVPrint CTypeclass where
+   pvPrint d p (CTypeclass i) = pvPrint d p i
 
 -- | Representation of the provisos and other class constraints
 data CPred = CPred { cpred_tc   :: CTypeclass  -- ^ constraint class, e.g., "Eq"
@@ -267,6 +392,10 @@ instance PPrint CPred where
     pPrint d _p (CPred (CTypeclass c) []) = ppConId d c
     pPrint d _p (CPred (CTypeclass c) ts) = ppConId d c <+> sep (map (pPrint d (maxPrec+1)) ts)
 
+instance PVPrint CPred where
+    pvPrint d _p (CPred (CTypeclass c) []) = pvpId d c
+    pvPrint d _p (CPred (CTypeclass c) ts) = pvpId d c <> text "#(" <> sepList (map (pvPrint d 0) ts) (text ",") <> text ")"
+
 instance HasPosition CPred where
     getPosition (CPred c ts) = getPosition (c, ts)
 
@@ -277,6 +406,10 @@ instance PPrint CQType where
     pPrint d  p (CQType [] ct) = pPrint d p ct
     pPrint d _p (CQType preds ct) = sep [text "(" <> sepList (map (pPrint d 0) preds) (text ",") <> text ")" <+> text "=>", pPrint d 0 ct]
 
+instance PVPrint CQType where
+    pvPrint d  p (CQType [] ct) = pvPrint d p ct
+    pvPrint d _p (CQType preds ct) = sep [text "(" <> sepList (map (pvPrint d 0) preds) (text ",") <> text ") =>", pvPrint d 0 ct]
+
 instance HasPosition CQType where
-    -- prefer t to ps, since that is a better position for BSV
-    getPosition (CQType ps t) = getPosition t `bestPosition` getPosition ps
+    -- prefer t' to ps, since that is a better position for BSV
+    getPosition (CQType ps t') = getPosition t' `bestPosition` getPosition ps

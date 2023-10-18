@@ -5,6 +5,7 @@ module Language.Bluespec.Classic.AST.Id
   , addIdProps
   , createPositionString
   , enumId
+  , getBSVIdString
   , getIdBase
   , getIdBaseString
   , getIdPosition
@@ -12,13 +13,18 @@ module Language.Bluespec.Classic.AST.Id
   , getIdQual
   , getIdQualString
   , getIdString
+  , likeModule
   , mkId
+  , mkIdPost
   , mkQId
   , ppConId
   , ppId
   , ppVarId
+  , pvpId
+  , pvpPId
   , qualEq
   , setBadId
+  , setIdBase
   , setIdProps
 
   , IdProp(..)
@@ -35,6 +41,7 @@ import Language.Bluespec.Classic.AST.Position
 import Language.Bluespec.Classic.AST.Pretty
 import Language.Bluespec.Lex
 import Language.Bluespec.Prelude
+import Language.Bluespec.SystemVerilog.AST.Pretty
 import Language.Bluespec.Util
 
 data Id = Id { id_pos :: !Position,
@@ -71,6 +78,13 @@ instance PPrint Id where
                         "_"  ++
                         (createPositionString (getIdPosition i)))
              else text (getIdString i)
+
+instance PVPrint Id where
+    pvPrint PDDebug _ i = text (show i)
+    pvPrint PDNoqual _ i = text (getIdBaseString i)
+    pvPrint _ _ i =
+      let s = getBSVIdString i
+      in text (if s=="not" then "!" else s)
 
 instance HasPosition Id where
     getPosition i = getIdPosition i
@@ -135,11 +149,21 @@ getIdString a | mfs == fsEmpty = getFString fs
     where mfs = getIdQual a
           fs = getIdBase a
 
+likeModule :: Id -> Bool
+likeModule i =
+  let s = getIdBaseString i
+      ln = length s
+      end = drop (ln-6) s
+  in if ln > 5 then end=="Module" else False
+
 mkId :: Position -> FString -> Id
 mkId pos fs =
     let value = Id pos fsEmpty fs []
     in -- trace("ID: " ++ (ppReadable value)) $
        value
+
+mkIdPost :: Id -> FString -> Id
+mkIdPost a fs = setIdBase a (concatFString [getIdBase a, fs])
 
 -- Qualified with a path.
 mkQId :: Position -> FString -> FString -> Id
@@ -194,12 +218,55 @@ ppVarId d i
     '$':c:_ | isIdChar c -> text (getIdStringVar i) -- task names
     _ -> text (getIdStringVar i)
 
+pvpId :: PDetail -> Id -> Doc
+pvpId PDDebug i = pvPrint PDDebug 0 i
+pvpId PDNoqual i = pvPrint PDNoqual 0 i
+pvpId _d i =
+    case getIdBaseString i of
+    "->" -> text "(->)"
+    ":=" -> text "<="
+    "not" -> text "!"
+    s@(c:_) | isDigit c -> text s
+    c:_ | isIdChar c -> text (getBSVIdString i)
+    _ -> text ("("++getBSVIdString i++")")
+
+pvpPId :: PDetail -> Id -> Doc
+pvpPId d i =
+    case getIdBaseString i of
+    _   -> pvpId d i
+
+-- hack: suppress the package name for operators
+getBSVIdString :: Id -> String
+getBSVIdString a = (getBSVIdStringz a)
+getBSVIdStringz :: Id -> String
+getBSVIdStringz a
+    | getIdBase a == fsEmpty = error "CVPrint.getIdStr: empty identifier"
+    | getIdQual a == fsEmpty = getIdBaseStringz a
+    | not (isIdChar (head (getIdBaseStringz a))) = getIdBaseStringz a -- operators
+    | {-(not show_qual) &&-} (getIdQual a == fsPrelude) =
+          getIdBaseStringz a  -- suppress "Prelude::" unless flag is on
+    | {-(not show_qual) &&-} (getIdQual a == fsPreludeBSV) =
+          getIdBaseStringz a  -- suppress "Prelude::" unless flag is on
+    | otherwise = getIdQualString a ++ "::" ++ getIdBaseStringz a
+
+getIdBaseStringz :: Id -> String
+getIdBaseStringz a =
+    let s = getIdBaseString a
+    in {-if (not (isEse()) || length s < 7) then-} s
+       {-
+       else if (take 7 s == "ese_id_" || take 7 s == "Ese_id_") then drop 7 s
+       else s
+       -}
+
 qualEq :: Id -> Id -> Bool
 qualEq a b | getIdQual a == fsEmpty || getIdQual b == fsEmpty = getIdBase a == getIdBase b
 qualEq a b = a == b
 
 setBadId :: Id -> Id
 setBadId idx = addIdProp idx IdP_bad_name
+
+setIdBase :: Id -> FString -> Id
+setIdBase a fs = a { id_fs = fs }
 
 setIdProps :: Id -> [IdProp] -> Id
 setIdProps a l = a { id_props = l }

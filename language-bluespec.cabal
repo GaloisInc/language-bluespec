@@ -58,6 +58,8 @@ library
                         Language.Bluespec.Classic.AST.Builtin.Ids
                         Language.Bluespec.Classic.AST.Builtin.Types
 
+                        Language.Bluespec.SystemVerilog.AST.Pretty
+
                         Language.Bluespec.Lex
                         Language.Bluespec.Pretty
     other-modules:      Language.Bluespec.IntegerUtil

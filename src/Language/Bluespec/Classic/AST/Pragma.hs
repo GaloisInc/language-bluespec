@@ -7,7 +7,10 @@ module Language.Bluespec.Classic.AST.Pragma
   , CSchedulePragma
   , IfcPragma(..)
 
+  , filterIArgNames
+  , filterPrintIfcArgs
   , ppPProp
+  , pvpPProp
   ) where
 
 import Language.Bluespec.Classic.AST.Id
@@ -15,6 +18,7 @@ import Language.Bluespec.Classic.AST.Position
 import Language.Bluespec.Classic.AST.Pretty
 import Language.Bluespec.Classic.AST.SchedInfo
 import Language.Bluespec.Prelude
+import Language.Bluespec.SystemVerilog.AST.Pretty
 import Language.Bluespec.Util
 
 data Pragma
@@ -28,6 +32,12 @@ instance PPrint Pragma where
           sepList (map (pPrint d 0) pps) (text ",") <> text " } #-}"
     pPrint d _p (Pnoinline is) =
         text "{-# noinline" <+> sep (map (ppId d) is) <+> text " #-}"
+
+instance PVPrint Pragma where
+    pvPrint d _p (Pproperties _i pps) =
+        foldr ($+$) empty (map (pvpPProp d) pps)
+    pvPrint d _p (Pnoinline is) =
+        text "(* noinline" <+> sep (map (pvpId d) is) <+> text " *)"
 
 instance HasPosition Pragma where
     getPosition (Pproperties i _) = getPosition i
@@ -134,8 +144,76 @@ instance PPrint PProp where
     pPrint _d _ (PPinst_hide) = text "hide"
     pPrint _d _p v = text (drop 2 (show v))
 
+instance PVPrint PProp where
+    pvPrint  d _ (PPscanInsert i) = text "scan_insert =" <+> pvPrint d 0 i
+    pvPrint _d _ (PPCLK s) = text ("clock_prefix = " ++ s)
+    pvPrint _d _ (PPGATE s) = text ("gate_prefix = " ++ s)
+    pvPrint _d _ (PPRSTN s) = text ("reset_prefix = " ++ s)
+    pvPrint  d _ (PPclock_osc xs) =
+        text "clock_osc = {"
+        <> sepList [ text "(" <> pvpId d i <> text "," <> (text s) <> text ")"
+                   | (i,s) <- xs ]
+                   (text ",")
+        <> text "}"
+    pvPrint d _ (PPclock_gate xs) =
+        text "clock_gate = {"
+        <> sepList [ text "(" <> pvpId d i <> text "," <> (text s) <> text ")"
+                   | (i,s) <- xs ]
+                   (text ",")
+        <> text "}"
+    pvPrint d _ (PPgate_inhigh is) =
+        text "gate_inhigh = {" <> sepList (map (pvpId d) is) (text ",") <> text "}"
+    pvPrint d _ (PPgate_unused is) =
+        text "gate_unused = {" <> sepList (map (pvpId d) is) (text ",") <> text "}"
+
+    pvPrint d _ (PPreset_port xs) =
+        text "reset_port = {"
+        <> sepList [ text "(" <> pvpId d i <> text "," <> (text s) <> text ")"
+                   | (i,s) <- xs ]
+                   (text ",")
+        <> text "}"
+    pvPrint d _ (PParg_param xs) =
+        text "param_port = {"
+        <> sepList [ text "(" <> pvpId d i <> text "," <> (text s) <> text ")"
+                   | (i,s) <- xs ]
+                   (text ",")
+        <> text "}"
+    pvPrint d _ (PParg_port xs) =
+        text "arg_port = {"
+        <> sepList [ text "(" <> pvpId d i <> text "," <> (text s) <> text ")"
+                   | (i,s) <- xs ]
+                   (text ",")
+        <> text "}"
+    pvPrint d _ (PParg_clocked_by xs) =
+        text "clocked_by = {"
+        <> sepList [ text "(" <> pvpId d i <> text "," <> (text s) <> text ")"
+                   | (i,s) <- xs ]
+                   (text ",")
+        <> text "}"
+    pvPrint d _ (PParg_reset_by xs) =
+        text "reset_by = {"
+        <> sepList [ text "(" <> pvpId d i <> text "," <> (text s) <> text ")"
+                   | (i,s) <- xs ]
+                   (text ",")
+        <> text "}"
+    pvPrint _d _ (PPoptions os) = text "options = {" <> sepList (map (text . show) os) (text ",") <> text "}"
+    pvPrint _d _ (PPverilog) = text "synthesize"
+    pvPrint _d _ (PPalwaysReady _ms) = text "always_ready"
+    pvPrint _d _ (PPalwaysEnabled _ms) = text "always_enabled"
+    pvPrint _d _ (PPenabledWhenReady _ms) = text "enabled_when_ready"
+    pvPrint _d _ (PPbitBlast) = text "bit_blast"
+    pvPrint _d _ (PPdoc comment) = text ("doc = " ++ doubleQuote comment)
+    pvPrint _d _ (PPdeprecate comment) = text ("deprecate = " ++ doubleQuote comment)
+    pvPrint  d _ (PPparam ids) = text "param = \"" <> sepList (map (pvpId d) ids) (text ",") <> text "\""
+    pvPrint  d _ (PPinst_name i) = text "inst_name = \"" <> pvpId d i <> text "\""
+    pvPrint _d _ (PPinst_hide) = text "inst_hide"
+    pvPrint _d _p v = text (drop 2 (show v))
+
 ppPProp :: PDetail -> PProp -> Doc
 ppPProp d pprop = text "{-#" <+> pPrint d 0 pprop <+> text "#-};"
+
+pvpPProp :: PDetail -> PProp -> Doc
+pvpPProp d pprop = text "(*" <+> pvPrint d 0 pprop <+> text "*)"
 
 data RulePragma
     = RPfireWhenEnabled
@@ -226,3 +304,25 @@ instance PPrint IfcPragma where
     pPrint _d _ (PIResultName flds)    = text "result ="       <+> doubleQuotes (text flds)
     pPrint _d _ (PIAlwaysRdy )         = text "always_ready "
     pPrint _d _ (PIAlwaysEnabled )     = text "always_enabled "
+
+instance PVPrint  IfcPragma where
+    pvPrint  d _ (PIArgNames ids)       = text "ports ="   <+>
+                                          brackets ( (sepList (map (doubleQuotes . (ppVarId d)) ids) comma) )
+    pvPrint _d _ (PIPrefixStr flds)     = text "prefix ="       <+> doubleQuotes (text flds)
+    pvPrint _d _ (PIRdySignalName flds) = text "ready ="        <+> doubleQuotes (text flds)
+    pvPrint _d _ (PIEnSignalName flds)  = text "enable ="       <+> doubleQuotes (text flds)
+    pvPrint _d _ (PIResultName flds)    = text "result ="       <+> doubleQuotes (text flds)
+    pvPrint _d _ (PIAlwaysRdy )         = text "always_ready "
+    pvPrint _d _ (PIAlwaysEnabled )     = text "always_enabled "
+
+-- convenience function -- extract out PIArgNames ids.
+filterIArgNames :: [IfcPragma] -> [Id]
+filterIArgNames prags = concatMap getArgNames prags
+    where getArgNames :: IfcPragma -> [Id]
+          getArgNames (PIArgNames names) = names
+          getArgNames _                  = []
+
+filterPrintIfcArgs :: [IfcPragma] -> [IfcPragma]
+filterPrintIfcArgs prags = filter isPrintArg prags
+    where isPrintArg (PIArgNames _names) = False
+          isPrintArg _x                  = True
