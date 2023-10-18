@@ -4,9 +4,9 @@ module Language.Bluespec.Classic.AST.Builtin.Types where
 import Language.Bluespec.Classic.AST.Builtin.Ids
 import Language.Bluespec.Classic.AST.Id
 import Language.Bluespec.Classic.AST.Position
+import Language.Bluespec.Classic.AST.Pretty
 import Language.Bluespec.Classic.AST.Type
 import Language.Bluespec.Prelude
-import Language.Bluespec.Pretty
 
 infixr 4 `fn`
 

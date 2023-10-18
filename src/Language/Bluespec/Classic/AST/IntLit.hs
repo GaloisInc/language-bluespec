@@ -9,8 +9,7 @@ module Language.Bluespec.Classic.AST.IntLit
   , ilSizedBin
   ) where
 
-import Text.PrettyPrint.HughesPJClass
-
+import Language.Bluespec.Classic.AST.Pretty
 import Language.Bluespec.IntegerUtil
 import Language.Bluespec.Prelude
 
@@ -34,8 +33,8 @@ instance Show IntLit where
          -- width of 0 means don't pad with leading zeros
          integerFormatPref 0 b i ++ s
 
-instance Pretty IntLit where
-     pPrintPrec _d _p i = text (show i)
+instance PPrint IntLit where
+     pPrint _d _p i = text (show i)
 
 ilDec :: Integer -> IntLit
 ilDec i = IntLit { ilWidth = Nothing, ilBase = 10, ilValue = i }

@@ -21,15 +21,14 @@ module Language.Bluespec.Classic.AST.Type
   ) where
 
 import Data.Char (chr)
-import Text.PrettyPrint.HughesPJClass
 
 import Language.Bluespec.Classic.AST.Builtin.Ids
 import Language.Bluespec.Classic.AST.FString
 import Language.Bluespec.Classic.AST.Id
 import Language.Bluespec.Classic.AST.Position
 import Language.Bluespec.Classic.AST.Pragma
+import Language.Bluespec.Classic.AST.Pretty
 import Language.Bluespec.Prelude
-import Language.Bluespec.Pretty
 import Language.Bluespec.Util
 
 -- | Representation of types
@@ -46,18 +45,18 @@ instance Eq Type where
 instance Ord Type where
     compare x y = cmp x y
 
-instance Pretty Type where
-    pPrintPrec _d _p (TCon (TyCon unit _ _)) | unit == idPrimUnit = text "()"
-    pPrintPrec  d _p (TCon c) = pPrintPrec d 0 c
-    pPrintPrec  d _p (TVar i) = pPrintPrec d 0 i
-    pPrintPrec  d  p (TAp (TAp (TCon pair) a) b) | isTConPair pair =
-        pparen (p >= 0) (sep [pPrintPrec d 0 a <> text ",", pPrintPrec d (-1) b])
-    pPrintPrec d p (TAp (TAp (TCon arr) a) r) | isTConArrow arr =
-        pparen (p > 8) (sep [pPrintPrec d 9 a <+> text "->", pPrintPrec d 8 r])
-    pPrintPrec d p (TAp e e') = pparen (p>9) $
-        sep [pPrintPrec d 9 e, pPrintPrec d 10 e']
-    pPrintPrec _d _p (TDefMonad _) = text ("TDefMonad")
-    pPrintPrec  d  p (TGen _ n) = pparen True (text "TGen" <+> pPrintPrec d p n)
+instance PPrint Type where
+    pPrint _d _p (TCon (TyCon unit _ _)) | unit == idPrimUnit = text "()"
+    pPrint  d _p (TCon c) = pPrint d 0 c
+    pPrint  d _p (TVar i) = pPrint d 0 i
+    pPrint  d  p (TAp (TAp (TCon pair) a) b) | isTConPair pair =
+        pparen (p >= 0) (sep [pPrint d 0 a <> text ",", pPrint d (-1) b])
+    pPrint d p (TAp (TAp (TCon arr) a) r) | isTConArrow arr =
+        pparen (p > 8) (sep [pPrint d 9 a <+> text "->", pPrint d 8 r])
+    pPrint d p (TAp e e') = pparen (p>9) $
+        sep [pPrint d 9 e, pPrint d 10 e']
+    pPrint _d _p (TDefMonad _) = text ("TDefMonad")
+    pPrint  d  p (TGen _ n) = pparen True (text "TGen" <+> pPrint d p n)
 
 instance HasPosition Type where
     getPosition (TVar var) = getPosition var
@@ -114,8 +113,8 @@ instance Ord TyVar where
     TyVar i n _ >  TyVar i' n' _  =  (n, i) >  (n', i')
     TyVar i n _ `compare` TyVar i' n' _  =  (n, i) `compare` (n', i')
 
-instance Pretty TyVar where
-    pPrintPrec d _ (TyVar i _ _) = ppVarId d i
+instance PPrint TyVar where
+    pPrint d _ (TyVar i _ _) = ppVarId d i
 
 instance HasPosition TyVar where
     getPosition (TyVar name _ _) = getPosition name
@@ -153,10 +152,10 @@ instance Ord TyCon where
     TyStr _ _   `compare` TyNum _  _      =  GT
     TyStr s _   `compare` TyStr s' _      =  s `compare` s'
 
-instance Pretty TyCon where
-    pPrintPrec  d _ (TyCon i _ _) = ppConId d i
-    pPrintPrec _d _ (TyNum i _) = text (itos i)
-    pPrintPrec _d _ (TyStr s _) = text (show s)
+instance PPrint TyCon where
+    pPrint  d _ (TyCon i _ _) = ppConId d i
+    pPrint _d _ (TyNum i _) = text (itos i)
+    pPrint _d _ (TyStr s _) = text (show s)
 
 instance HasPosition TyCon where
     getPosition (TyCon name _k _) = getPosition name
@@ -175,11 +174,11 @@ data TISort
         | TIabstract
         deriving (Eq, Ord, Show)
 
-instance Pretty TISort where
-    pPrintPrec  d  p (TItype n t) = pparen (p>0) $ text "TItype" <+> pPrintPrec d 0 n <+> pPrintPrec d 1 t
-    pPrintPrec  d  p (TIdata is enum) = pparen (p>0) $ text (if enum then "TIdata (enum)" else "TIdata") <+> pPrintPrec d 1 is
-    pPrintPrec  d  p (TIstruct ss is) = pparen (p>0) $ text "TIstruct" <+> pPrintPrec d 1 ss <+> pPrintPrec d 1 is
-    pPrintPrec _d _p (TIabstract) = text "TIabstract"
+instance PPrint TISort where
+    pPrint  d  p (TItype n t) = pparen (p>0) $ text "TItype" <+> pPrint d 0 n <+> pPrint d 1 t
+    pPrint  d  p (TIdata is enum) = pparen (p>0) $ text (if enum then "TIdata (enum)" else "TIdata") <+> pPrint d 1 is
+    pPrint  d  p (TIstruct ss is) = pparen (p>0) $ text "TIstruct" <+> pPrint d 1 ss <+> pPrint d 1 is
+    pPrint _d _p (TIabstract) = text "TIabstract"
 
 data StructSubType
         = SStruct
@@ -194,8 +193,8 @@ data StructSubType
                     }
         deriving (Eq, Ord, Show)
 
-instance Pretty StructSubType where
-    pPrintPrec _ _ ss = text (show ss)
+instance PPrint StructSubType where
+    pPrint _ _ ss = text (show ss)
 
 type CType = Type
 
@@ -212,12 +211,12 @@ data Kind = KStar           -- ^ kind of a simple value type
           | KVar Int        -- ^ generated kind variable (used only during kind inference)
     deriving (Eq, Ord, Show)
 
-instance Pretty Kind where
-    pPrintPrec _ _ KStar = text "*"
-    pPrintPrec _ _ KNum = text "#"
-    pPrintPrec _ _ KStr = text "$"
-    pPrintPrec d p (Kfun l r) = pparen (p>9) $ pPrintPrec d 10 l <+> text "->" <+> pPrintPrec d 9 r
-    pPrintPrec _ _ (KVar i) = text (showKVar i)
+instance PPrint Kind where
+    pPrint _ _ KStar = text "*"
+    pPrint _ _ KNum = text "#"
+    pPrint _ _ KStr = text "$"
+    pPrint d p (Kfun l r) = pparen (p>9) $ pPrint d 10 l <+> text "->" <+> pPrint d 9 r
+    pPrint _ _ (KVar i) = text (showKVar i)
 
 -- KIMisc.newKVar starts at this number
 baseKVar :: Int
@@ -246,17 +245,17 @@ data PartialKind
         | PKfun PartialKind PartialKind
         deriving (Eq, Ord, Show)
 
-instance Pretty PartialKind where
-    pPrintPrec _ _ PKNoInfo = text "?"
-    pPrintPrec _ _ PKStar = text "*"
-    pPrintPrec _ _ PKNum = text "#"
-    pPrintPrec _ _ PKStr = text "$"
-    pPrintPrec d p (PKfun l r) =
-        pparen (p>9) $ pPrintPrec d 10 l <+> text "->" <+> pPrintPrec d 9 r
+instance PPrint PartialKind where
+    pPrint _ _ PKNoInfo = text "?"
+    pPrint _ _ PKStar = text "*"
+    pPrint _ _ PKNum = text "#"
+    pPrint _ _ PKStr = text "$"
+    pPrint d p (PKfun l r) =
+        pparen (p>9) $ pPrint d 10 l <+> text "->" <+> pPrint d 9 r
 
 -- | A named typeclass
 newtype CTypeclass = CTypeclass Id
-    deriving (Eq, Ord, Show, Pretty, HasPosition)
+    deriving (Eq, Ord, Show, PPrint, HasPosition)
 
 -- | Representation of the provisos and other class constraints
 data CPred = CPred { cpred_tc   :: CTypeclass  -- ^ constraint class, e.g., "Eq"
@@ -264,9 +263,9 @@ data CPred = CPred { cpred_tc   :: CTypeclass  -- ^ constraint class, e.g., "Eq"
                    }
         deriving (Eq, Ord, Show)
 
-instance Pretty CPred where
-    pPrintPrec d _p (CPred (CTypeclass c) []) = ppConId d c
-    pPrintPrec d _p (CPred (CTypeclass c) ts) = ppConId d c <+> sep (map (pPrintPrec d (fromIntegral (maxPrec+1))) ts)
+instance PPrint CPred where
+    pPrint d _p (CPred (CTypeclass c) []) = ppConId d c
+    pPrint d _p (CPred (CTypeclass c) ts) = ppConId d c <+> sep (map (pPrint d (maxPrec+1)) ts)
 
 instance HasPosition CPred where
     getPosition (CPred c ts) = getPosition (c, ts)
@@ -274,9 +273,9 @@ instance HasPosition CPred where
 data CQType = CQType [CPred] CType
     deriving (Eq, Ord, Show)
 
-instance Pretty CQType where
-    pPrintPrec d  p (CQType [] ct) = pPrintPrec d p ct
-    pPrintPrec d _p (CQType preds ct) = sep [text "(" <> sepList (map (pPrintPrec d 0) preds) (text ",") <> text ")" <+> text "=>", pPrintPrec d 0 ct]
+instance PPrint CQType where
+    pPrint d  p (CQType [] ct) = pPrint d p ct
+    pPrint d _p (CQType preds ct) = sep [text "(" <> sepList (map (pPrint d 0) preds) (text ",") <> text ")" <+> text "=>", pPrint d 0 ct]
 
 instance HasPosition CQType where
     -- prefer t to ps, since that is a better position for BSV

@@ -8,10 +8,9 @@ module Language.Bluespec.Classic.AST.SchedInfo
 import qualified Data.List as L
 import qualified Data.Map as M
 import qualified Data.Set as S
-import Text.PrettyPrint.HughesPJClass
 
+import Language.Bluespec.Classic.AST.Pretty
 import Language.Bluespec.Prelude
-import Language.Bluespec.Pretty
 
 data SchedInfo idtype = SchedInfo {
         methodConflictInfo :: MethodConflictInfo idtype,
@@ -30,13 +29,13 @@ data SchedInfo idtype = SchedInfo {
         }
         deriving (Eq, Ord, Show)
 
-instance (Pretty idtype, Ord idtype) => Pretty (SchedInfo idtype) where
-    pPrintPrec d _p si =
+instance (PPrint idtype, Ord idtype) => PPrint (SchedInfo idtype) where
+    pPrint d _p si =
         sep [text "SchedInfo",
-             pPrintPrec d 0 (methodConflictInfo si),
-             pPrintPrec d 0 (rulesBetweenMethods si),
-             pPrintPrec d 0 (rulesBeforeMethods si),
-             pPrintPrec d 0 (clockCrossingMethods si)]
+             pPrint d 0 (methodConflictInfo si),
+             pPrint d 0 (rulesBetweenMethods si),
+             pPrint d 0 (rulesBeforeMethods si),
+             pPrint d 0 (clockCrossingMethods si)]
 
 {- a CF b     => a & b have the same effect when executed in parallel
                  in the same rule, or when executed in either order
@@ -72,9 +71,9 @@ data MethodConflictInfo idtype =
     }
     deriving (Eq, Ord, Show)
 
-instance (Pretty idtype, Ord idtype) => Pretty (MethodConflictInfo idtype) where
-    pPrintPrec d p mci =
-        let ds = makeMethodConflictDocs (pPrintPrec d p) ppReadable "[" "]" mci
+instance (PPrint idtype, Ord idtype) => PPrint (MethodConflictInfo idtype) where
+    pPrint d p mci =
+        let ds = makeMethodConflictDocs (pPrint d p) ppReadable "[" "]" mci
         in  text "[" <> sepList ds (text ",") <> text "]"
 
 -- Given:
