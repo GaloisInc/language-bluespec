@@ -46,6 +46,7 @@ library
                         Language.Bluespec.Classic.AST.Literal
                         Language.Bluespec.Classic.AST.Position
                         Language.Bluespec.Classic.AST.Pragma
+                        Language.Bluespec.Classic.AST.Pretty
                         Language.Bluespec.Classic.AST.SchedInfo
                         Language.Bluespec.Classic.AST.SString
                         Language.Bluespec.Classic.AST.Syntax

@@ -8,16 +8,15 @@ module Language.Bluespec.Classic.AST.Position
   , HasPosition(..)
   ) where
 
-import Text.PrettyPrint.HughesPJClass
-
+import Language.Bluespec.Classic.AST.Pretty
 import Language.Bluespec.Prelude
 
 -- For now, we don't track positions, although we may do so in the future.
 data Position = NoPos
   deriving (Eq, Ord, Show)
 
-instance Pretty Position where
-    pPrintPrec _ _ NoPos = text "<NoPos>"
+instance PPrint Position where
+    pPrint _ _ NoPos = text "<NoPos>"
 
 bestPosition :: Position -> Position -> Position
 bestPosition p1 p2 = if p1 == noPosition then p2 else p1

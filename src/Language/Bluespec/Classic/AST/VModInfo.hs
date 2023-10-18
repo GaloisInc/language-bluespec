@@ -18,27 +18,26 @@ module Language.Bluespec.Classic.AST.VModInfo
   ) where
 
 import qualified Data.List as L
-import Text.PrettyPrint.HughesPJClass
 
 import Language.Bluespec.Classic.AST.Id
 import Language.Bluespec.Classic.AST.Position
+import Language.Bluespec.Classic.AST.Pretty
 import Language.Bluespec.Classic.AST.SchedInfo
 import Language.Bluespec.Prelude
-import Language.Bluespec.Pretty
 
 newtype VName = VName String
         deriving (Eq, Ord, Show)
 
-instance Pretty VName where
-    pPrintPrec _ _ (VName s) = text s
+instance PPrint VName where
+    pPrint _ _ (VName s) = text s
 
 newtype VPathInfo = VPathInfo [(VName, VName)]
                   deriving (Eq, Ord, Show)
 
-instance Pretty VPathInfo where
-    pPrintPrec _d _p (VPathInfo []) =
+instance PPrint VPathInfo where
+    pPrint _d _p (VPathInfo []) =
         s2par "No combinational paths from inputs to outputs"
-    pPrintPrec d p (VPathInfo nns) =
+    pPrint d p (VPathInfo nns) =
         let
             -- function to join paths going to the same output
             joinPaths [] = []
@@ -47,10 +46,10 @@ instance Pretty VPathInfo where
                     (xs, ys) -> (map fst xs, o) : joinPaths ys
 
             -- function to display one pair
-            ppOne ([i],out) = pPrintPrec d p i <+> text "->" <+> pPrintPrec d p out
+            ppOne ([i],out) = pPrint d p i <+> text "->" <+> pPrint d p out
             ppOne (ins,out) = text "(" <>
-                              sepList (map (pPrintPrec d p) ins) (text ",") <>
-                              text ")" <+> text "->" <+> pPrintPrec d p out
+                              sepList (map (pPrint d p) ins) (text ",") <>
+                              text ")" <+> text "->" <+> pPrint d p out
         in
             s2par "Combinational paths from inputs to outputs:" $+$
             nest 2 (vcat (map ppOne (joinPaths nns)))
@@ -73,16 +72,16 @@ data VeriPortProp = VPreg
                   | VPunused
         deriving (Eq, Ord, Show)
 
-instance Pretty VeriPortProp where
-    pPrintPrec _ _ VPreg = text "reg"
-    pPrintPrec _ _ VPclock = text "clock"
-    pPrintPrec _ _ VPconst = text "const"
-    pPrintPrec _ _ VPinhigh = text "inhigh"
-    pPrintPrec _ _ VPouthigh = text "outhigh"
-    pPrintPrec _ _ VPunused = text "unused"
-    pPrintPrec _ _ VPreset  = text "reset"
-    pPrintPrec _ _ VPinout  = text "inout"
-    pPrintPrec _ _ VPclockgate = text "clock gate"
+instance PPrint VeriPortProp where
+    pPrint _ _ VPreg = text "reg"
+    pPrint _ _ VPclock = text "clock"
+    pPrint _ _ VPconst = text "const"
+    pPrint _ _ VPinhigh = text "inhigh"
+    pPrint _ _ VPouthigh = text "outhigh"
+    pPrint _ _ VPunused = text "unused"
+    pPrint _ _ VPreset  = text "reset"
+    pPrint _ _ VPinout  = text "inout"
+    pPrint _ _ VPclockgate = text "clock gate"
 
 data VArgInfo = Param VName    -- named module parameter
               -- named module port, with associated clock and reset
@@ -93,16 +92,16 @@ data VArgInfo = Param VName    -- named module parameter
               | InoutArg VName (Maybe Id) (Maybe Id)
               deriving (Eq, Ord, Show)
 
-instance Pretty VArgInfo where
-    pPrintPrec d _p (Param x) = text "param " <> pPrintPrec d 0 x <> text ";"
-    pPrintPrec d _p (Port x mclk mrst) =
-        text "port " <> pPrintPrec d 0 x <+>
+instance PPrint VArgInfo where
+    pPrint d _p (Param x) = text "param " <> pPrint d 0 x <> text ";"
+    pPrint d _p (Port x mclk mrst) =
+        text "port " <> pPrint d 0 x <+>
         ppMClk d mclk <+> ppMRst d mrst <>
         text ";"
-    pPrintPrec d p (ClockArg x) = text "clockarg " <> pPrintPrec d p x <> text ";"
-    pPrintPrec d p (ResetArg x) = text "resetarg " <> pPrintPrec d p x <> text ";"
-    pPrintPrec d _p (InoutArg x mclk mrst) =
-        text "inoutarg " <> pPrintPrec d 0 x <+>
+    pPrint d p (ClockArg x) = text "clockarg " <> pPrint d p x <> text ";"
+    pPrint d p (ResetArg x) = text "resetarg " <> pPrint d p x <> text ";"
+    pPrint d _p (InoutArg x mclk mrst) =
+        text "inoutarg " <> pPrint d 0 x <+>
         ppMClk d mclk <+> ppMRst d mrst <>
         text ";"
 
@@ -110,14 +109,14 @@ ppMClk :: PDetail -> Maybe Id -> Doc
 ppMClk d mclk =
     let clk = case mclk of
                   Nothing -> text "no_clock"
-                  Just c  -> pPrintPrec d 0 c
+                  Just c  -> pPrint d 0 c
     in  text "clocked_by (" <> clk <> text ")"
 
 ppMRst :: PDetail -> Maybe Id -> Doc
 ppMRst d mrst =
     let rst = case mrst of
                   Nothing -> text "no_reset"
-                  Just r  -> pPrintPrec d 0 r
+                  Just r  -> pPrint d 0 r
     in  text "reset_by (" <> rst <> text ")"
 
 type VPort = (VName, [VeriPortProp])
@@ -144,24 +143,24 @@ data VFieldInfo = Method { vf_name   :: Id, -- method name
                           vf_reset :: (Maybe Id) } -- optional reset
                 deriving (Eq, Ord, Show)
 
-instance Pretty VFieldInfo where
-    pPrintPrec d p (Method n c r m i o e) =
-      text "method " <> pout o <> pPrintPrec d p n <> pmult m <>
+instance PPrint VFieldInfo where
+    pPrint d p (Method n c r m i o e) =
+      text "method " <> pout o <> pPrint d p n <> pmult m <>
       pins i <> pena e <+> ppMClk d c <+> ppMRst d r <>
       text ";"
         where pout Nothing = empty
-              pout (Just po) = pPrintPrec d p po
+              pout (Just po) = pPrint d p po
               pmult 1  = empty
-              pmult n' = text "[" <> pPrintPrec d p n' <> text "]"
+              pmult n' = text "[" <> pPrint d p n' <> text "]"
               pins []  = empty
-              pins i'  = text "(" <> sepList (map (pPrintPrec d p) i') (text ",") <> text ")"
+              pins i'  = text "(" <> sepList (map (pPrint d p) i') (text ",") <> text ")"
               pena Nothing = empty
-              pena (Just en) = text " enable (" <> pPrintPrec d p en <> text ")"
-    pPrintPrec d p (Clock i) = text "clock " <> pPrintPrec d p i <> text ";"
-    pPrintPrec d p (Reset i) = text "reset " <> pPrintPrec d p i <> text ";"
-    pPrintPrec d p (Inout n port c r) =
-        text "inout " <> pPrintPrec d p n <+>
-        text "(" <> pPrintPrec d p port <> text ")" <+>
+              pena (Just en) = text " enable (" <> pPrint d p en <> text ")"
+    pPrint d p (Clock i) = text "clock " <> pPrint d p i <> text ";"
+    pPrint d p (Reset i) = text "reset " <> pPrint d p i <> text ";"
+    pPrint d p (Inout n port c r) =
+        text "inout " <> pPrint d p n <+>
+        text "(" <> pPrint d p port <> text ")" <+>
         ppMClk d c <+> ppMRst d r <> text ";"
 
 -- describes the clocks imported by a module
@@ -199,36 +198,36 @@ data VClockInfo = ClockInfo {
                  siblingClocks :: [(Id, Id)] }
                 deriving (Eq, Ord, Show)
 
-instance Pretty VClockInfo where
-    pPrintPrec d _p (ClockInfo in_cs out_cs as ss) =
+instance PPrint VClockInfo where
+    pPrint d _p (ClockInfo in_cs out_cs as ss) =
         vcat (map pOutCInf out_cs ++
               map pInCInf in_cs ++
               map pAnc as ++
               map pSib ss)
         where
-              pOutCInf (i,mc) = text "clock " <> pPrintPrec d 0 i <>
+              pOutCInf (i,mc) = text "clock " <> pPrint d 0 i <>
                                 text "(" <> pOutMClk mc <> text ");"
               pOutMClk Nothing = empty
-              pOutMClk (Just (vn, mg)) = pPrintPrec d 0 vn <> pOutMGate mg
+              pOutMClk (Just (vn, mg)) = pPrint d 0 vn <> pOutMGate mg
               pOutMGate Nothing = empty
               pOutMGate (Just (vn, vpps)) =
-                  text ", " <> pPortProps vpps <> pPrintPrec d 0 vn
+                  text ", " <> pPortProps vpps <> pPrint d 0 vn
               pPortProps [] = empty
               pPortProps (vp:vpps) =
-                  text "{-" <> pPrintPrec d 0 vp <> text "-} " <> pPortProps vpps
+                  text "{-" <> pPrint d 0 vp <> text "-} " <> pPortProps vpps
 
-              pInCInf (i,mc) = text "clock " <> pPrintPrec d 0 i <>
+              pInCInf (i,mc) = text "clock " <> pPrint d 0 i <>
                                text "(" <> pInMClk mc <> text ");"
               pInMClk Nothing = empty
-              pInMClk (Just (vn, mg)) = pPrintPrec d 0 vn <> pInMGate mg
+              pInMClk (Just (vn, mg)) = pPrint d 0 vn <> pInMGate mg
               pInMGate (Left True)  = text ", {-inhigh-}"
               pInMGate (Left False) = text ", {-unused-}"
-              pInMGate (Right vn)   = text ", " <> pPrintPrec d 0 vn
+              pInMGate (Right vn)   = text ", " <> pPrint d 0 vn
 
-              pAnc (i,j) = text "ancestor (" <> pPrintPrec d 0 i <> text ", " <>
-                           pPrintPrec d 0 j <> text ");"
-              pSib (i,j) = text "sibling (" <> pPrintPrec d 0 i <> text ", " <>
-                           pPrintPrec d 0 j <> text ");"
+              pAnc (i,j) = text "ancestor (" <> pPrint d 0 i <> text ", " <>
+                           pPrint d 0 j <> text ");"
+              pSib (i,j) = text "sibling (" <> pPrint d 0 i <> text ", " <>
+                           pPrint d 0 j <> text ");"
 
 instance HasPosition VClockInfo where
   getPosition (ClockInfo { output_clocks = ((id',_):_)}) = getPosition id'
@@ -246,14 +245,14 @@ data VResetInfo = ResetInfo {
                   }
   deriving (Eq, Ord, Show)
 
-instance Pretty VResetInfo where
-    pPrintPrec d p (ResetInfo in_rs out_rs) = vcat (map pRInf (out_rs ++ in_rs))
+instance PPrint VResetInfo where
+    pPrint d p (ResetInfo in_rs out_rs) = vcat (map pRInf (out_rs ++ in_rs))
       where t = text
             pRInf (i,(mn,mc)) =
-                t"reset " <> pPrintPrec d p i <>
+                t"reset " <> pPrint d p i <>
                 t"(" <> pMRst mn <> t")" <+>
                 t"clocked_by(" <> pMClk mc <> t");"
             pMRst Nothing  = empty
-            pMRst (Just n) = pPrintPrec d p n
+            pMRst (Just n) = pPrint d p n
             pMClk Nothing  = t"no_clock"
-            pMClk (Just c) = pPrintPrec d p c
+            pMClk (Just c) = pPrint d p c

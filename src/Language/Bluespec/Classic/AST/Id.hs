@@ -28,14 +28,13 @@ module Language.Bluespec.Classic.AST.Id
 
 import Data.Char (isDigit)
 import qualified Data.List as L
-import Text.PrettyPrint.HughesPJClass
 
 import Language.Bluespec.Classic.AST.Builtin.FStrings
 import Language.Bluespec.Classic.AST.FString
 import Language.Bluespec.Classic.AST.Position
+import Language.Bluespec.Classic.AST.Pretty
 import Language.Bluespec.Lex
 import Language.Bluespec.Prelude
-import Language.Bluespec.Pretty
 import Language.Bluespec.Util
 
 data Id = Id { id_pos :: !Position,
@@ -62,9 +61,9 @@ instance Ord Id where
 instance Show Id where
     show = show_brief
 
-instance Pretty Id where
-    pPrintPrec d _p i
-      | d == pdDebug
+instance PPrint Id where
+    pPrint d _p i
+      | d == PDDebug
       = text (local_show i)
       | otherwise
       = if (dbgLevel >= 1)
@@ -151,8 +150,8 @@ mkQId pos mfs fs
 
 ppConId :: PDetail -> Id -> Doc
 ppConId d i
-  | d == pdDebug
-  = pPrintPrec pdDebug 0 i
+  | d == PDDebug
+  = pPrint PDDebug 0 i
   | otherwise
   = -- text ( "props:" ++ show (getIdProps i)) <>
     case (getIdBaseString i) of
@@ -162,8 +161,8 @@ ppConId d i
 
 ppId :: PDetail -> Id -> Doc
 ppId d i
-  | d == pdDebug
-  = pPrintPrec pdDebug 0 i
+  | d == PDDebug
+  = pPrint PDDebug 0 i
   | otherwise
   = if (dbgLevel >= 1)
     then case (getIdBaseString i) of
@@ -181,8 +180,8 @@ ppId d i
 
 ppVarId :: PDetail -> Id -> Doc
 ppVarId d i
-  | d == pdDebug
-  = pPrintPrec pdDebug 0 i
+  | d == PDDebug
+  = pPrint PDDebug 0 i
   | otherwise
   = if (dbgLevel >= 1)
     then case (getIdBaseString i) of
@@ -249,10 +248,10 @@ data IdProp = IdPCanFire
               | IdPParserGenerated
         deriving (Eq, Ord, Show)
 
-instance Pretty IdProp where
-    pPrintPrec d _ (IdPInlinedPositions poss) =
-        pparen True (text "IdPInlinedPositions" <+> pPrintPrec d 0 poss)
-    pPrintPrec _ _ prop = text (show prop)
+instance PPrint IdProp where
+    pPrint d _ (IdPInlinedPositions poss) =
+        pparen True (text "IdPInlinedPositions" <+> pPrint d 0 poss)
+    pPrint _ _ prop = text (show prop)
 
 -- #############################################################################
 -- # Methods for adding properties to Id's, checking for them etc.

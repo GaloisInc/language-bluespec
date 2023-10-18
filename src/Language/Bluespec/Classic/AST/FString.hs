@@ -8,8 +8,8 @@ module Language.Bluespec.Classic.AST.FString
 
 import Data.String (IsString(..))
 import qualified Data.Text as T
-import Text.PrettyPrint.HughesPJClass
 
+import Language.Bluespec.Classic.AST.Pretty
 import Language.Bluespec.Classic.AST.SString
 import Language.Bluespec.Prelude
 
@@ -24,8 +24,8 @@ instance IsString FString where
 instance Show FString where
     show (FString s) = show s
 
-instance Pretty FString where
-    pPrintPrec _ _ x = text (show x)
+instance PPrint FString where
+    pPrint _ _ x = text (show x)
 
 getFString :: FString -> String
 getFString = toString
