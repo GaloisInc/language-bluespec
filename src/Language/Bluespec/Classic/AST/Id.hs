@@ -146,7 +146,8 @@ mkId pos fs =
 mkQId :: Position -> FString -> FString -> Id
 mkQId pos mfs fs
     | fs == fsEmpty = Id pos fsEmpty fsEmpty []
-    | isDigit (head (getFString fs)) = Id pos fsEmpty fs [] -- XXX
+    | fHead:_ <- getFString fs
+    , isDigit fHead = Id pos fsEmpty fs [] -- XXX
     | otherwise = Id pos mfs fs []
 
 ppConId :: PDetail -> Id -> Doc
