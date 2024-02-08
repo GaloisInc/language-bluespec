@@ -1,5 +1,5 @@
 # Revision history for language-bluespec
 
-## 0.1 -- YYYY-mm-dd
+## 0.1 -- 2024-02-08
 
-* First version. Released on an unsuspecting world.
+* Initial version of `language-bluespec`.
