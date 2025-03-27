@@ -30,10 +30,12 @@ tested-with:        GHC == 8.6.5
                   , GHC == 8.8.4
                   , GHC == 8.10.7
                   , GHC == 9.0.2
-                  , GHC == 9.2.2
+                  , GHC == 9.2.8
                   , GHC == 9.4.8
-                  , GHC == 9.6.4
-                  , GHC == 9.8.1
+                  , GHC == 9.6.7
+                  , GHC == 9.8.4
+                  , GHC == 9.10.1
+                  , GHC == 9.12.1
 
 source-repository head
   type:                git
@@ -66,7 +68,7 @@ library
                         Language.Bluespec.Util
     default-extensions: NoImplicitPrelude
     build-depends:      base >= 4.12 && < 5
-                      , containers >= 0.1 && < 0.7
+                      , containers >= 0.1 && < 0.8
                       , pretty >= 1.1.2 && < 1.2
                       , text >= 0.1 && < 2.2
 
