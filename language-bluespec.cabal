@@ -66,7 +66,7 @@ library
                         Language.Bluespec.Util
     default-extensions: NoImplicitPrelude
     build-depends:      base >= 4.12 && < 5
-                      , containers >= 0.1 && < 0.7
+                      , containers >= 0.1 && < 0.8
                       , pretty >= 1.1.2 && < 1.2
                       , text >= 0.1 && < 2.2
 
