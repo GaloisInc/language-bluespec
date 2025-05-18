@@ -243,7 +243,8 @@ getBSVIdStringz :: Id -> String
 getBSVIdStringz a
     | getIdBase a == fsEmpty = error "CVPrint.getIdStr: empty identifier"
     | getIdQual a == fsEmpty = getIdBaseStringz a
-    | not (isIdChar (head (getIdBaseStringz a))) = getIdBaseStringz a -- operators
+    | aBaseHead:_ <- getIdBaseStringz a
+    , not (isIdChar aBaseHead) = getIdBaseStringz a -- operators
     | {-(not show_qual) &&-} (getIdQual a == fsPrelude) =
           getIdBaseStringz a  -- suppress "Prelude::" unless flag is on
     | {-(not show_qual) &&-} (getIdQual a == fsPreludeBSV) =

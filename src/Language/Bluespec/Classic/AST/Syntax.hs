@@ -88,9 +88,9 @@ pdefs _ [] = []
 pdefs d (df1@(CPragma (Pproperties i1 _props)):df2@(CValueSign (CDef i2 _ _)):rest)
     | i1==i2 =
   (p2defs d df1 df2):(pdefs d rest)
-pdefs d dfs@((CPragma (Pnoinline [i1])):(CValueSign (CDef i2 _ _)):_)
+pdefs d ((CPragma (Pnoinline [i1])):(CValueSign (CDef i2 _ _)):dfs)
     | i1==i2 =
-  (t"(* noinline *)") : (pdefs d $ tail dfs)
+  (t"(* noinline *)") : (pdefs d dfs)
 pdefs d (df:dfs) = (pvp d df):(pdefs d dfs)
 
 -- XXX excluded identifiers are commented out because BSV does not support them (yet)
@@ -1050,7 +1050,8 @@ findSpecialOps [] = ([],[],undefined)
 findSpecialOps [x] = ([x],[],undefined)
 findSpecialOps [_x,_y] = error "bad list of operators and operands"
 findSpecialOps ((CRand e1):(CRator _ i):(CRand e2):xs) |
-                            (isIdChar (head (getBSVIdString i)) || (getBSVIdString i =="++")) =
+                            iHead:_ <- getBSVIdString i,
+                            (isIdChar iHead || (getBSVIdString i =="++")) =
   let w = CBinOp e1 i e2
   in findSpecialOps ((CRand w):xs)
 findSpecialOps (x:(_y@(CRator _ i)):xs) | (getBSVIdString i) == "$" =
@@ -1422,7 +1423,8 @@ ppRuleBody d e              = pvp d e <> t";"
 ppRuleName :: PDetail -> Maybe CExpr -> Doc
 ppRuleName _d Nothing = t"dummy_name"
 ppRuleName _d (Just(CLit(CLiteral _ (LString s)))) = t(f s) where
-   f s' = map (\ c -> if c==' ' then '_' else c) ((toLower (head s')):(tail s'))
+   f [] = error "ppRuleName: Empty rule name"
+   f (s':ss') = map (\ c -> if c==' ' then '_' else c) ((toLower s'):ss')
 ppRuleName d (Just i) = pvp d i
 
 ppRules :: PDetail -> Int -> [CSchedulePragma] -> [CRule] -> Bool -> Doc
